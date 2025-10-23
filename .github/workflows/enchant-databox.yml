@@ -1,0 +1,21 @@
+name: push Enchant KPIs to Databox
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes, UTC
+  workflow_dispatch: {}       # allow manual runs from the UI
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip requests
+      - env:
+          ENCHANT_SITE:   ${{ secrets.ENCHANT_SITE }}
+          ENCHANT_TOKEN:  ${{ secrets.ENCHANT_TOKEN }}
+          DATABOX_TOKEN:  ${{ secrets.DATABOX_TOKEN }}
+        run: python scripts/enchant_to_databox.py

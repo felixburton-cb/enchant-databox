@@ -1,19 +1,44 @@
-# .github/workflows/databox-test.yml
-name: test Databox token
+name: probe Databox push endpoint
 on: { workflow_dispatch: {} }
 
 jobs:
-  push:
+  probe:
     runs-on: ubuntu-latest
     steps:
-      - name: Push test metric to THIS token
+      - name: Try common Databox endpoints until one works
+        env:
+          TOKEN: ${{ secrets.DATABOX_TOKEN }}
         run: |
           set -euo pipefail
-          JSON='{"data":[{"$enchant_debug":123}]}'
-          curl -sv -u "${{ secrets.DATABOX_TOKEN }}:" \
-            -H "Content-Type: application/json" \
-            -d "$JSON" \
-            https://push.databox.com/data \
-            -D /tmp/headers -o /tmp/body
-          echo "----- HTTP HEADERS -----"; cat /tmp/headers
-          echo "----- RESPONSE BODY -----"; cat /tmp/body
+          endpoints=(
+            "https://push.databox.com/data"
+            "https://push.databox.com/"
+            "https://push.databox.com/api/v1/data"
+            "https://push.databox.com/v1/data"
+          )
+
+          payload='{"data":[{"$enchant_debug":123}]}'
+          for url in "${endpoints[@]}"; do
+            echo ">>> Trying $url"
+            # -sS (quiet errors), -i (show headers) for debugging
+            resp=$(curl -sS -i -u "$TOKEN:" \
+                    -H "Content-Type: application/json" \
+                    -H "Accept: application/json" \
+                    -d "$payload" "$url" || true)
+
+            code=$(printf "%s" "$resp" | head -n1 | awk '{print $2}')
+            ctype=$(printf "%s" "$resp" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print $2; exit}')
+            body=$(printf "%s" "$resp" | awk 'flag{print} /^(|\r)$/{flag=1}')
+
+            echo "HTTP $code | content-type: ${ctype:-<none>}"
+            echo "Body (first 200 chars): $(echo "$body" | head -c 200)"
+            echo
+
+            if echo "$body" | grep -q '"status":"ok"'; then
+              echo "✅ SUCCESS using $url"
+              exit 0
+            fi
+          done
+
+          echo "❌ None of the tried endpoints returned JSON ok. Check token or paste the headers above to me."
+          exit 1

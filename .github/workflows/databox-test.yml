@@ -1,0 +1,16 @@
+name: test Databox token
+on:
+  workflow_dispatch: {}
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post a test metric to Databox
+        run: |
+          set -e
+          curl -sS -u "${{ secrets.DATABOX_TOKEN }}:" \
+            -H "Content-Type: application/json" \
+            -d '{"data":[{"$enchant_debug":123}]}' \
+            https://push.databox.com -D /tmp/h -o /tmp/r
+          echo "HTTP headers:"; cat /tmp/h
+          echo "Response body:"; cat /tmp/r

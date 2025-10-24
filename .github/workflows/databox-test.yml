@@ -9,7 +9,7 @@ jobs:
       - name: Push test metric to Databox (v2)
         run: |
           set -euo pipefail
-          JSON='[{"$enchant_debug":123}]'
+          JSON='[{"key":"enchant_debug","value":123}]'
           curl -sS -u "${{ secrets.DATABOX_TOKEN }}:" \
             -H "Content-Type: application/json" \
             -H "Accept: application/vnd.databox.v2+json" \

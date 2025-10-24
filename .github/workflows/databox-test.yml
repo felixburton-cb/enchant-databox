@@ -1,3 +1,4 @@
+# .github/workflows/databox-test.yml
 name: test Databox token
 on: { workflow_dispatch: {} }
 
@@ -8,7 +9,7 @@ jobs:
       - name: Push test metric to Databox (v2)
         run: |
           set -euo pipefail
-          JSON='{"data":[{"$enchant_debug":123}]}'
+          JSON='[{"$enchant_debug":123}]'
           curl -sS -u "${{ secrets.DATABOX_TOKEN }}:" \
             -H "Content-Type: application/json" \
             -H "Accept: application/vnd.databox.v2+json" \

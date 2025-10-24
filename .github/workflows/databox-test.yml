@@ -1,3 +1,4 @@
+# .github/workflows/databox-test.yml
 name: test Databox token
 on: { workflow_dispatch: {} }
 
@@ -8,14 +9,11 @@ jobs:
       - name: Push test metric to THIS token
         run: |
           set -euo pipefail
-          echo "Using token (first 8 chars): ${DATABOX_TOKEN:0:8}******"
-          JSON='{"data":[{"$enchant_debug":123,"date":"2025-01-01 00:00:00"}]}'
-          curl -sv -u "${DATABOX_TOKEN}:" \
+          JSON='{"data":[{"$enchant_debug":123}]}'
+          curl -sv -u "${{ secrets.DATABOX_TOKEN }}:" \
             -H "Content-Type: application/json" \
             -d "$JSON" \
-            https://push.databox.com \
+            https://push.databox.com/data \
             -D /tmp/headers -o /tmp/body
           echo "----- HTTP HEADERS -----"; cat /tmp/headers
           echo "----- RESPONSE BODY -----"; cat /tmp/body
-        env:
-          DATABOX_TOKEN: ${{ secrets.DATABOX_TOKEN }}

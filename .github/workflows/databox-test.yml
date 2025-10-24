@@ -12,33 +12,41 @@ jobs:
           set -euo pipefail
           endpoints=(
             "https://push.databox.com/data"
-            "https://push.databox.com/"
             "https://push.databox.com/api/v1/data"
             "https://push.databox.com/v1/data"
+            "https://push.databox.com/"   # last resort (often HTML)
           )
-
           payload='{"data":[{"$enchant_debug":123}]}'
+
+          pass=0
           for url in "${endpoints[@]}"; do
             echo ">>> Trying $url"
-            # -sS (quiet errors), -i (show headers) for debugging
-            resp=$(curl -sS -i -u "$TOKEN:" \
-                    -H "Content-Type: application/json" \
-                    -H "Accept: application/json" \
-                    -d "$payload" "$url" || true)
+            hdr=$(mktemp); body=$(mktemp)
+            # Basic auth: username is the token, blank password
+            curl -sS -u "$TOKEN:" \
+              -H "Content-Type: application/json" \
+              -H "Accept: application/json" \
+              -d "$payload" \
+              -D "$hdr" "$url" -o "$body" || true
 
-            code=$(printf "%s" "$resp" | head -n1 | awk '{print $2}')
-            ctype=$(printf "%s" "$resp" | tr -d '\r' | awk -F': ' 'tolower($1)=="content-type"{print $2; exit}')
-            body=$(printf "%s" "$resp" | awk 'flag{print} /^(|\r)$/{flag=1}')
-
+            code=$(awk 'NR==1{print $2}' "$hdr")
+            ctype=$(awk -F': ' 'tolower($1)=="content-type"{print $2; exit}' "$hdr")
             echo "HTTP $code | content-type: ${ctype:-<none>}"
-            echo "Body (first 200 chars): $(echo "$body" | head -c 200)"
-            echo
+            echo -n "Body (first 200 chars): "; head -c 200 "$body" || true; echo; echo
 
-            if echo "$body" | grep -q '"status":"ok"'; then
+            if grep -q '"status":"ok"' "$body"; then
               echo "✅ SUCCESS using $url"
-              exit 0
+              echo "URL=$url" >> "$GITHUB_ENV"
+              pass=1
+              break
             fi
           done
 
-          echo "❌ None of the tried endpoints returned JSON ok. Check token or paste the headers above to me."
-          exit 1
+          if [ "$pass" -ne 1 ]; then
+            echo "❌ None of the endpoints returned JSON ok. Check token or share the output above."
+            exit 1
+          fi
+
+      - name: Summary
+        run: |
+          echo "Work

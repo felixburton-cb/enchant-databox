@@ -1,3 +1,10 @@
+name: push Enchant KPIs to Databox
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # every 15 minutes, UTC
+  workflow_dispatch: {}      # allow manual runs from the UI
+
 jobs:
   push:
     runs-on: ubuntu-latest
@@ -17,7 +24,6 @@ jobs:
 
       - run: python -m pip install --upgrade pip requests
 
-      # --- This is a separate step (note the leading "- name") ---
       - name: Databox smoke test
         run: |
           echo "Running Databox smoke test..."
@@ -27,6 +33,5 @@ jobs:
             -d '[{"key":"__smoke_enchant_yir__","value":789}]' \
             https://push.databox.com/data
 
-      # --- Your normal push step ---
       - name: Push Enchant data
         run: python scripts/enchant_to_databox.py

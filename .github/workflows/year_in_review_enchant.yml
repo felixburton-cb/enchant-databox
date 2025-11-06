@@ -1,0 +1,21 @@
+name: Year-in-review 2025 (Enchant → Databox)
+on:
+  schedule:
+    - cron: "17 2 * * *"   # daily 02:17 UTC
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade pip requests urllib3
+      - name: Push year-in-review metrics
+        env:
+          ENCHANT_SITE:   ${{ secrets.ENCHANT_SITE }}   # e.g. carebit
+          ENCHANT_TOKEN:  ${{ secrets.ENCHANT_TOKEN }}
+          DATABOX_TOKEN:  ${{ secrets.DATABOX_TOKEN }}   # 3a8ec65f062d4d28b6d37c1189bdbbfa
+        run: python scripts/enchant_year_in_review_2025.py

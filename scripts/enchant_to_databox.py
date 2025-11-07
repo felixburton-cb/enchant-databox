@@ -163,6 +163,13 @@ for mon in sorted(m_res_minutes_n.keys()):
 if csat_monthly:
     for mon, v in sorted(csat_monthly.items()):
         payload.append({"key":"enchant_csat_avg_monthly","value": float(v), "date": iso_z(mon)})
+print("DEBUG – about to push:")
+try:
+    for row in payload:  # or whatever your list is called
+        print(row)
+except NameError:
+    # If you used a dict called `metrics` instead of `payload`
+    print(metrics)
 
 # ---- push ----
 resp = session.post(
